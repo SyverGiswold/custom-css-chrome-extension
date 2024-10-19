@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Custom CSS",
+  "version": "1",
+  "description": "Apply custom CSS to websites. Probably buggy",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ]
+}
