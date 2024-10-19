@@ -1,12 +1,27 @@
-function applyCustomCSS() {
+let customStyleElement;
+
+function applyCustomCSS(css) {
+  if (!customStyleElement) {
+    customStyleElement = document.createElement('style');
+    customStyleElement.id = 'custom-css-override';
+    document.head.appendChild(customStyleElement);
+  }
+  customStyleElement.textContent = css;
+}
+
+function loadInitialCSS() {
   const domain = window.location.hostname;
   chrome.storage.sync.get(domain, function (data) {
     if (data[domain]) {
-      const style = document.createElement('style');
-      style.textContent = data[domain];
-      document.head.appendChild(style);
+      applyCustomCSS(data[domain]);
     }
   });
 }
 
-applyCustomCSS();
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if (request.action === "updateCSS") {
+    applyCustomCSS(request.css);
+  }
+});
+
+loadInitialCSS();

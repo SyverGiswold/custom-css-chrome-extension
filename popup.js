@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   let lastLineCount = 0;
   let measureDiv;
+  let updateTimeout;
 
   function updateLineNumbers() {
     const lines = cssEditor.value.split('\n');
@@ -57,6 +58,19 @@ document.addEventListener('DOMContentLoaded', function () {
   function handleInput() {
     updateLineNumbers();
     adjustCurrentLineHeight();
+    
+    // Clear the previous timeout
+    clearTimeout(updateTimeout);
+    
+    // Set a new timeout to update the CSS
+    updateTimeout = setTimeout(updateCSS, 1000);
+  }
+
+  function updateCSS() {
+    const css = cssEditor.value;
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "updateCSS", css: css });
+    });
   }
 
   cssEditor.addEventListener('input', handleInput);
@@ -110,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
       updateLineNumbers();
       createMeasureDiv();
       Array.from(lineNumbers.children).forEach(adjustLineHeight);
+      updateCSS(); // Apply the CSS immediately when the popup opens
     });
   });
 

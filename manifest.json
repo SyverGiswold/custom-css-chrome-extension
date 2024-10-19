@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Custom CSS",
-  "version": "1",
+  "version": "1.1",
   "description": "Apply custom CSS to websites. Probably buggy",
   "permissions": [
     "activeTab",
@@ -12,12 +12,9 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content.js"
-      ]
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
   ]
 }
