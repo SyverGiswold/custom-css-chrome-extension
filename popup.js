@@ -55,12 +55,34 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // New function to save to localStorage
+  function saveToLocalStorage(domain, css) {
+    localStorage.setItem(`tempCSS_${domain}`, css);
+  }
+
+  // New function to load from localStorage
+  function loadFromLocalStorage(domain) {
+    return localStorage.getItem(`tempCSS_${domain}`);
+  }
+
+  // New function to clear localStorage for a domain
+  function clearLocalStorage(domain) {
+    localStorage.removeItem(`tempCSS_${domain}`);
+  }
+
   function handleInput() {
     updateLineNumbers();
     adjustCurrentLineHeight();
     
     // Clear the previous timeout
     clearTimeout(updateTimeout);
+    
+    // Save to localStorage immediately
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      const url = new URL(tabs[0].url);
+      const currentDomain = url.hostname;
+      saveToLocalStorage(currentDomain, cssEditor.value);
+    });
     
     // Set a new timeout to update the CSS
     updateTimeout = setTimeout(updateCSS, 1000);
@@ -115,19 +137,35 @@ document.addEventListener('DOMContentLoaded', function () {
     lineNumbers.scrollTop = cssEditor.scrollTop;
   });
 
+  // Modified to check localStorage first when loading
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const url = new URL(tabs[0].url);
     const currentDomain = url.hostname;
     domain.textContent = currentDomain;
-    chrome.storage.sync.get(currentDomain, function (data) {
-      cssEditor.value = data[currentDomain] || '';
+
+    // Check localStorage first
+    const tempCSS = loadFromLocalStorage(currentDomain);
+    
+    if (tempCSS !== null) {
+      // Use temporary CSS if available
+      cssEditor.value = tempCSS;
       updateLineNumbers();
       createMeasureDiv();
       Array.from(lineNumbers.children).forEach(adjustLineHeight);
-      updateCSS(); // Apply the CSS immediately when the popup opens
-    });
+      updateCSS();
+    } else {
+      // Fall back to chrome.storage.sync
+      chrome.storage.sync.get(currentDomain, function (data) {
+        cssEditor.value = data[currentDomain] || '';
+        updateLineNumbers();
+        createMeasureDiv();
+        Array.from(lineNumbers.children).forEach(adjustLineHeight);
+        updateCSS();
+      });
+    }
   });
 
+  // Modified save button to clear localStorage after saving
   saveButton.addEventListener('click', function () {
     const css = cssEditor.value;
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -139,6 +177,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       chrome.storage.sync.set(saveData, function () {
         console.log('CSS saved for', currentDomain);
+        // Clear localStorage after successful save
+        clearLocalStorage(currentDomain);
         updateDomainList();
       });
     });
@@ -166,6 +206,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const domainToDelete = this.getAttribute('data-domain');
         chrome.storage.sync.remove(domainToDelete, function () {
           console.log('CSS deleted for', domainToDelete);
+          // Clear localStorage when deleting
+          clearLocalStorage(domainToDelete);
           updateDomainList();
         });
       });

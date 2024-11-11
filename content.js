@@ -18,7 +18,7 @@ function loadInitialCSS() {
   });
 }
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function (request) {
   if (request.action === "updateCSS") {
     applyCustomCSS(request.css);
   }
